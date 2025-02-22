@@ -1,0 +1,267 @@
+# Copyright (C) 2025 The Entreveloper
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: ENTGENAI 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/entgenai\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-02-22T20:51:36+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.11.0\n"
+"X-Domain: entgenai\n"
+
+#. Plugin Name of the plugin
+#: entgenai.php
+msgid "ENTGENAI"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: entgenai.php
+msgid "https://entreveloper.com/"
+msgstr ""
+
+#. Description of the plugin
+#: entgenai.php
+msgid "Wordpress Plugin for anyone interested in doing GenAI right within their Wordpress website."
+msgstr ""
+
+#. Author of the plugin
+#: entgenai.php
+msgid "The Entreveloper"
+msgstr ""
+
+#. Author URI of the plugin
+#: entgenai.php
+msgid "https://github.com/TheEntreveloper"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:46
+msgid "Generative AI Config"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:54
+msgid "AI Provider"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:68
+msgid "AI Provider URL"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:81
+msgid "AI Provider Model"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:95
+msgid "AI Provider API KEY"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:129
+msgid "Dismiss this notice"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:131
+msgid "Choose your AI configuration to generate with AI"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:285
+msgid "Gen AI"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:286
+msgid "Generate"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:294
+#: backend/config/EntGenAiPluginSettings.php:295
+msgid "Config"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:303
+msgid "About ENTGENAI"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:304
+msgid "About"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:312
+msgid "Frequently Asked Questions"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:313
+msgid "Faq"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:337
+#: backend/config/EntGenAiPluginSettings.php:376
+msgid "Settings Saved"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:353
+msgid "Save Settings"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:406
+msgid "AI Assistance"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:409
+msgid "You are using"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:409
+msgid "change"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:412
+msgid "Write your Prompt"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:414
+msgid "Your prompt will influence how accurate the generated response is. This is referred to as \"Prompt Engineering\""
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:419
+msgid "Some AI Systems accept a system prompt with instructions about how to generate for the user's prompt (This is optional)"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:422
+msgid "Ex: As a language assistant, you will summarize the following input. Keep it to no more than 250 characters."
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:428
+msgid "This is your prompt. Describe what do you want the AI to do"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:431
+msgid "This is my content to be summarised"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:435
+msgid "AI Generate"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:446
+msgid "Content title"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:450
+msgid "Save generated content"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:490
+#: backend/config/EntGenAiPluginSettings.php:510
+msgid "Could not retrieve prompt data"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:502
+msgid "Did not receive any response"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:516
+msgid "Please enter a title for your content"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:524
+msgid "The content has been saved"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:529
+msgid "The content could not be saved, something went wrong"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:541
+msgid "About EntGenAI"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:542
+msgid "EntGenAI (or Entreveloper Gen AI) is a Wordpress Plugin created by Entreveloper.com, which makes easy to create AI generated content and to add that content to pages on a Wordpress website."
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:543
+msgid ""
+"EntGenAI is still work in progress, please join the effort: report bugs, \r\n"
+"            suggest improvements, contribute code, design, or documentation, or provide any other kind of support."
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:552
+msgid "EntGenAI FAQ"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:553
+msgid "1. What does this plugin do?"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:554
+msgid "It brings genAI to Wordpress, in a way that is simple to use and simple to understand."
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:555
+msgid "2. Why to use this plugin if I already have access to an AI on my device?"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:556
+msgid "As limited as it still is, it already provides a simple way to use generative AI for your Wordpress pages, without code and without copy and paste of generated content."
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:557
+msgid "3. Can ENTGENAI obtain an AI API for me?"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:558
+msgid "No, you must obtain an AI API. Then configure this plugin with your API Key."
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:559
+msgid "4. What AI API Providers you support at the moment?"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:560
+msgid "Right now we support Google Gemini, Open AI, Anthropic and local installations of Ollama running llama3.2, deepseek or similar."
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:561
+msgid "5. Are you planning to continue working on the plugin?"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:562
+msgid "Yes, it is work in progress. There is room for improvement on the current functionality, and there are additional features under development."
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:563
+msgid "6. Is the Plugin free?"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:564
+msgid "Yes, it is."
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:565
+msgid "7. What doesn't this plugin do?"
+msgstr ""
+
+#: backend/config/EntGenAiPluginSettings.php:566
+msgid "It does not provide its own AI model. It provides a way to connect to an AI Service Provider via an API"
+msgstr ""
+
+#: backend/service/EntGenAiPluginLauncher.php:79
+msgid "entgenaiv Settings"
+msgstr ""
+
+#: backend/service/EntGenAiPluginLauncher.php:79
+msgid "AI Settings"
+msgstr ""
+
+#: backend/service/EntGenAiPluginLauncher.php:88
+msgid "entgenai"
+msgstr ""
+
+#: backend/service/EntGenAiPluginLauncher.php:95
+msgid ""
+"This Plugin does not send any information anywhere without your consent, but by its nature it \r\n"
+"           requires connecting to external entities (Your chosen AI Services Provider). <br>"
+msgstr ""
