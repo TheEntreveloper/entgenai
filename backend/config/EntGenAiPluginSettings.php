@@ -100,7 +100,7 @@ class EntGenAiPluginSettings
             'entgenai_config_section',
             array(
                 'label_for'         => 'entgenai_ai_provider_api_key',
-                'class'             => 'entgenai_row',
+                'class'             => 'entgenai_row entgenai_ai_local_provider_api_wrap',
                 'entgenai_custom_data' => 'custom',
             )
         );
@@ -186,6 +186,11 @@ class EntGenAiPluginSettings
                 }
             }
             function onSelectAIProvider(selected) {
+                if (selected === 'Choose') {
+                    toggleProviderEntries('hide');
+                } else {
+                    toggleProviderEntries('show');
+                }
                 let aiProvUrl = document.getElementById(\"entgenai_ai_local_provider_url\");
                 switch(selected) {
                     ";
@@ -212,7 +217,21 @@ class EntGenAiPluginSettings
                 btn.textContent === 'View' ? btn.textContent = 'Hide' : btn.textContent = 'View';
             }
             
+            function toggleProviderEntries(action) {
+                if (action === 'show') {
+                    jQuery( \".entgenai_ai_local_provider_url_wrap\" ).show();
+                    jQuery( \".entgenai_ai_local_provider_md_wrap\" ).show();
+                    jQuery( \".entgenai_ai_local_provider_api_wrap\" ).show();
+                } else {
+                    jQuery( \".entgenai_ai_local_provider_url_wrap\" ).hide();
+                    jQuery( \".entgenai_ai_local_provider_md_wrap\" ).hide();
+                    jQuery( \".entgenai_ai_local_provider_api_wrap\" ).hide();
+                }
+            }
             //showModels(selAIProv.value);
+            if (selAIProv.value === null || selAIProv.value === 'Choose') {
+                toggleProviderEntries('hide');
+            }
         ";
         $result = wp_add_inline_script('entgenai-admin-util-js', $jsData, 'before');
     }
