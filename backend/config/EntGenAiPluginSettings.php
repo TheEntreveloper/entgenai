@@ -35,9 +35,11 @@ class EntGenAiPluginSettings
         ]);
 
         // Register a new setting for "entgenai" page.
-        register_setting('ev_ai_config', 'entgenai_config_options', $args = array(
+        register_setting('entgenai_config', 'entgenai_config_options', $args = array( // phpcs:ignore PluginCheck.CodeAnalysis.SettingSanitization.register_settingDynamic
 			'type' => 'string',
-//			'sanitize_callback' => 'sanitize_text_field',
+            // this causes a warning on plugin check: PluginCheck.CodeAnalysis.SettingSanitization.register_settingDynamic
+            // but this is not wrong
+			'sanitize_callback' => array($this, 'sanitize_eai_settings'),
 			));
 
         // Register a new section in the "entgenai" config page.
@@ -45,7 +47,7 @@ class EntGenAiPluginSettings
             'entgenai_config_section',
             __('Generative AI Config', 'entgenai'),
             array($this, 'entgenai_config_section_callback'),
-            'ev_ai_config'
+            'entgenai_config'
         );
 
 	    // Register a new field in the "entgenai_config_section" section, inside the "entgenai" page.
@@ -53,7 +55,7 @@ class EntGenAiPluginSettings
 		    'entgenai_ai_provider', // As of WP 4.6 this value is used only internally.
 		    __('AI Provider', 'entgenai'),
 		    array($this, 'entgenai_ai_provider_cb'),
-		    'ev_ai_config',
+		    'entgenai_config',
 		    'entgenai_config_section',
 		    array(
 			    'label_for'         => 'entgenai_ai_provider',
@@ -67,7 +69,7 @@ class EntGenAiPluginSettings
             // Use $args' label_for to populate the id inside the callback.
             __('AI Provider URL', 'entgenai'),
             array($this, 'entgenai_ai_local_provider_url_cb'),
-            'ev_ai_config',
+            'entgenai_config',
             'entgenai_config_section',
             array(
                 'label_for'         => 'entgenai_ai_local_provider_url',
@@ -80,7 +82,7 @@ class EntGenAiPluginSettings
             'entgenai_ai_local_provider_md',
             __('AI Provider Model', 'entgenai'),
             array($this, 'entgenai_ai_local_provider_md_cb'),
-            'ev_ai_config',
+            'entgenai_config',
             'entgenai_config_section',
             array(
                 'label_for'         => 'entgenai_ai_local_provider_md',
@@ -94,7 +96,7 @@ class EntGenAiPluginSettings
             // Use $args' label_for to populate the id inside the callback.
             __('AI Provider API KEY', 'entgenai'),
             array($this, 'entgenai_ai_provider_api_key_cb'),
-            'ev_ai_config',
+            'entgenai_config',
             'entgenai_config_section',
             array(
                 'label_for'         => 'entgenai_ai_provider_api_key',
@@ -107,11 +109,18 @@ class EntGenAiPluginSettings
 
 	function enqueue_custom_settings_assets($hook)
 	{
-		if ( isset( $_GET['page'] ) && 'entgenai-gen' !== $_GET['page'] ) {
+        // only checking if page value is equal to a specific value, not using that data for anything else
+        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : null; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $page ) && 'entgenai-config' !== $page && 'entgenai-gen' !== $page) {
             return;
 		}
-		wp_register_script('entgenai-admin-util-js', ENTGENAI_PLUGIN_URL . 'frontend/admin/assets/adminutil.js', array('jquery-core', 'jquery-ui-dialog', 'jquery-ui-progressbar'), false, true);
+		wp_register_script('entgenai-admin-util-js', ENTGENAI_PLUGIN_URL . 'frontend/admin/assets/adminutil.js', array('jquery-core', 'jquery-ui-dialog', 'jquery-ui-progressbar'), ENTGENAI_PLUGIN_VERSION, true);
 		wp_enqueue_script('entgenai-admin-util-js');
+        if ($page === 'entgenai-config') {
+            $this->inlineJs();
+        } else {
+            $this->genInlineJs();
+        }
 		wp_register_style('entgenai-jqui-css', ENTGENAI_PLUGIN_URL . 'frontend/admin/assets/jquery-ui.css', false, '1.0.0');
 		wp_enqueue_style('entgenai-jqui-css');
 	}
@@ -140,6 +149,153 @@ class EntGenAiPluginSettings
         <?php
     }
 
+    function inlineJs() {
+        $aiProviders = get_option('entgenai_known_ai_providers');
+        $jsData = "let models = {};
+            populateModels();
+
+            let selAIProv = document.getElementById('entgenai_ai_provider');
+
+            selAIProv.addEventListener('change', (event) => {
+                onSelectAIProvider(event.target.value);
+            });
+
+            function populateModels() {
+            ";
+                foreach ($aiProviders as $k => $v) {
+                    $jsData .= "models['".$k."'] = [];";
+                    foreach($v['models'] as $md) {
+                        $jsData .= "models['".$k."'].push('".$md."');";
+                    }
+                }
+            $jsData .= "    
+            }
+
+            function showModels(aip) {
+                if (aip === null || aip === undefined) return;
+                let ml = models[aip].length;
+                let mdSelect = document.getElementById(\"entgenai_ai_local_provider_md\");
+                if (mdSelect === null || mdSelect === undefined) return;
+                while (mdSelect.length > 0) {
+                  mdSelect.remove(mdSelect.length-1);
+                }
+                for (var i=0;i<ml;i++) {
+                    var option = document.createElement(\"option\");
+                    option.text = models[aip][i];
+                    mdSelect.add(option);
+                }
+            }
+            function onSelectAIProvider(selected) {
+                let aiProvUrl = document.getElementById(\"entgenai_ai_local_provider_url\");
+                switch(selected) {
+                    ";
+                    foreach ($aiProviders as $k => $v) {
+                        $jsData .= "
+                    case \"".$k."\":
+                        aiProvUrl.value = \"".$v['url']."\";
+                        showModels(\"".$k."\");
+                        break;";
+                    }
+                    $jsData .= "
+                    default:
+                        aiProvUrl.value = \"".array_values($aiProviders)[0]['url']."\";
+                        showModels(\"".array_keys($aiProviders)[0]."\");
+                        break;
+                }
+            }
+            // populate value with default if no provider selected
+            //onSelectAIProvider(selAIProv.value);
+
+            function toggleContent(id, btn) {
+                const input = id;
+                input.type === 'text' ? input.type = 'password' : input.type = 'text';
+                btn.textContent === 'View' ? btn.textContent = 'Hide' : btn.textContent = 'View';
+            }
+            
+            //showModels(selAIProv.value);
+        ";
+        $result = wp_add_inline_script('entgenai-admin-util-js', $jsData, 'before');
+    }
+
+    /**
+    * Javascript functions for the genAI functionality
+    */
+    function genInlineJs() {
+        $wpnonce = wp_create_nonce( 'wp_rest' );
+        $jsData = '
+                async function doFetch(uri, data) {
+                    let progressbar = jQuery( "#progressbar" );
+                    progressbar.show();
+                    progressbar.progressbar( "option", "value", false );
+
+                    let r = await fetch(
+                        wpApiSettings.root + uri,
+                        {
+                            method: \'POST\',
+                            headers: {\'X-WP-Nonce\': \''.$wpnonce.'\',"Content-Type": "application/json"},
+                            body: JSON.stringify(data),
+                            //signal: AbortSignal.timeout(60000)  <-- this way didn\'t work
+                        }, 60000
+                    );
+                    if (!r.ok) {
+                        console.log("Error "+r.status);
+                        progressbar.hide();
+                        return null;
+                    }
+                    progressbar.hide();
+                    let jsonStr = await r.json();
+                    return JSON.parse(jsonStr);
+                }
+
+                async function genText() {
+                    let elm = document.getElementById("entgenaiuserprompt");
+                    if (elm === undefined || elm.value === \'\') {
+                        showFb(\''.esc_html__('Could not retrieve prompt data','entgenai').'\', \'error\');
+                    }
+                    let sysElm = document.getElementById(\'entgenaisysprompt\');
+                    let sysPrompt = sysElm.value ?? \'\';
+                    let data = {"topic" : elm.value, "sys": sysPrompt};
+                    let jsonResponse = await doFetch(\'entgenai/v1/gen/text\', data);
+                    let gentxtElm = document.getElementById(\'entgenai_gen_txt\');
+                    if (jsonResponse !== null && jsonResponse !== undefined) {
+                    gentxtElm.value = jsonResponse[\'content\'] ?? \'\';
+                        let savgb = document.getElementById(\'savgenblock\');
+                        savgb.style.setProperty(\'display\', \'block\');
+                    } else {
+                        showFb(\''.esc_html__('Did not receive any response','entgenai').'\', \'error\');
+                    }
+                    return \'\';
+                }
+                let gtxtId = 0;
+                async function savegentxt() {
+                    let elm = document.getElementById(\'entgenai_gen_txt\');
+                    if (elm === undefined || elm.value === \'\') {
+                        showFb(\''.esc_html__('Could not retrieve prompt data', 'entgenai').'\', \'error\');
+                        return;
+                    }
+                    let gtxt = elm.value;
+                    let gentxttitle = document.getElementById(\'gentxttitle\');
+                    if (gentxttitle === undefined || gentxttitle.value === \'\') {
+                        showFb(\''.esc_html__('Please enter a title for your content', 'entgenai').'\', \'error\');
+                        return;
+                    }
+                    let data = {"gtxt" : gtxt, "title": gentxttitle.value, "gtid": gtxtId};
+                    let jsonResponse = await doFetch(\'entgenai/v1/save/gendata\', data);
+                    // the fetch seems to be undefining the value in the textarea, so restoring it here.
+                    elm.value = gtxt;
+                    if (jsonResponse !== undefined && jsonResponse > 0) {
+                        showFb(\''.esc_html__('The content has been saved', 'entgenai').'\', \'success\');
+                        gtxtId = jsonResponse;
+                        let gtedlnk = document.getElementById(\'gtedlnk\');
+                        gtedlnk.innerHTML = \'<a href="'.esc_url(admin_url('post.php')).'?post=\'+gtxtId+\'&action=edit">Edit as Page</a>\';
+                    } else {
+                        showFb(\''.esc_html__('The content could not be saved, something went wrong', 'entgenai').'\', \'error\');
+                    }
+                }
+        ';
+        $result = wp_add_inline_script('entgenai-admin-util-js', $jsData, 'before');
+    }
+
 	/**
      * AI Provider callback function.
      *
@@ -147,14 +303,15 @@ class EntGenAiPluginSettings
      */
     function entgenai_ai_provider_cb($args)
     {
-        $aiProviders = get_option('known_ai_providers');
+        $aiProviders = get_option('entgenai_known_ai_providers');
         // Get the value of the setting we've registered with register_setting()
         $options = get_option('entgenai_config_options');
         if (isset($options[$args['label_for']])) {
             $this->selAiProvider = $options[$args['label_for']];
         }
-        $this->printselect($args);
-
+        $this->printselect($args);?>
+            <option value="Choose">Choose</option>
+            <?php
             foreach ($aiProviders as $k => $v) { ?>
             <option value="<?php echo(esc_attr($k));?>" <?php echo isset($options[$args['label_for']]) ? (selected($options[$args['label_for']], $k, false)) : (''); ?>>
                 <?php echo esc_html($k); ?>
@@ -162,60 +319,6 @@ class EntGenAiPluginSettings
             <?php
             } ?>
         </select>
-        <script>
-            let models = {};
-            populateModels();
-
-            let selAIProv = document.getElementById("<?php echo esc_attr($args['label_for']); ?>");
-
-            selAIProv.addEventListener("change", (event) => {
-                onSelectAIProvider(event.target.value);
-            });
-
-            function populateModels() {
-            <?php
-                foreach ($aiProviders as $k => $v) { ?>
-                    models['<?php echo esc_js($k);?>'] = [];
-                    <?php
-                    foreach($v['models'] as $md) { ?>
-                        models['<?php echo esc_js($k);?>'].push('<?php echo esc_js($md);?>');
-                    <?php
-                    }
-                }
-            ?>
-            }
-
-            function showModels(aip) {
-                if (aip === null || aip === undefined) return;
-                let ml = models[aip].length;
-                let mdSelect = document.getElementById('entgenai_ai_local_provider_md');
-                if (mdSelect === null || mdSelect === undefined) return;
-                while (mdSelect.length > 0) {
-                  mdSelect.remove(mdSelect.length-1);
-                }
-                for (var i=0;i<ml;i++) {
-                    var option = document.createElement("option");
-                    option.text = models[aip][i];
-                    mdSelect.add(option);
-                }
-            }
-            function onSelectAIProvider(selected) {
-                let aiProvUrl = document.getElementById('entgenai_ai_local_provider_url');
-                switch(selected) {
-                    <?php
-                    foreach ($aiProviders as $k => $v) { ?>
-                    case '<?php echo(esc_js($k));?>':
-                        aiProvUrl.value = "<?php echo esc_url($v['url']);?>";
-                        showModels('<?php echo(esc_js($k));?>');
-                        break;
-                    <?php } ?>
-                    default:
-                        aiProvUrl.value = "<?php echo esc_url(array_values($aiProviders)[0]['url']);?>";
-                        showModels('<?php echo(esc_js(array_keys($aiProviders)[0]));?>');
-                        break;
-                }
-            }
-        </script>
     <?php
     }
 
@@ -225,21 +328,11 @@ class EntGenAiPluginSettings
 
 		?>
         <input type="text" data-custom="<?php echo esc_attr($args['entgenai_custom_data']); ?>" id="<?php echo esc_attr($args['label_for']); ?>" name="entgenai_config_options[<?php echo esc_attr($args['label_for']); ?>]" value="<?php echo esc_attr($options[$args['label_for']] ?? ''); ?>">
-        <script>
-            // populate value with default if no provider selected
-            onSelectAIProvider(selAIProv.value);
-
-            function toggleContent(id, btn) {
-                const input = id;
-                input.type === 'text' ? input.type = 'password' : input.type = 'text';
-                btn.textContent === 'View' ? btn.textContent = 'Hide' : btn.textContent = 'View';
-            }
-        </script>
 		<?php
 	}
 
     function entgenai_ai_local_provider_md_cb($args) {
-        $aiProviders = get_option('known_ai_providers');
+        $aiProviders = get_option('entgenai_known_ai_providers');
         // Get the value of the setting we've registered with register_setting()
         $options = get_option('entgenai_config_options');
         $this->printselect($args);
@@ -255,9 +348,6 @@ class EntGenAiPluginSettings
             }
         }?>
         </select>
-        <script>
-            showModels(selAIProv.value);
-        </script>
         <?php
     }
 
@@ -304,7 +394,7 @@ class EntGenAiPluginSettings
 	        esc_html__('About', 'entgenai'),
             'manage_options',
             'entgenai-about',
-            array($this, 'ev_ai_about_page_html')
+            array($this, 'entgenai_about_page_html')
         );
 
         add_submenu_page(
@@ -313,7 +403,7 @@ class EntGenAiPluginSettings
 	        esc_html__('Faq', 'entgenai'),
             'manage_options',
             'entgenai-faq',
-            array($this, 'ev_ai_faq_page_html')
+            array($this, 'entgenai_faq_page_html')
         );
     }
 
@@ -332,7 +422,8 @@ class EntGenAiPluginSettings
 
         // check if the user have submitted the settings
         // WordPress will add the "settings-updated" $_GET parameter to the url
-        if (isset($_GET['settings-updated'])) {
+        // not using the data in this $_GET, just checking if it is set
+        if (isset($_GET['settings-updated'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             // add settings saved message with the class of "updated"
             add_settings_error('entgenai_messages', 'entgenai_message', __('Settings Saved', 'entgenai'), 'updated');
         }
@@ -345,16 +436,25 @@ class EntGenAiPluginSettings
             <form action="options.php" method="post">
                 <?php
                 // output security fields for the registered setting "entgenai"
-                settings_fields('ev_ai_config');
+                settings_fields('entgenai_config');
                 // output setting sections and their fields
                 // (sections are registered for "entgenai", each field is registered to a specific section)
-                do_settings_sections('ev_ai_config');
+                do_settings_sections('entgenai_config');
                 // output save settings button
                 submit_button(__('Save Settings', 'entgenai'));
                 ?>
             </form>
         </div>
 <?php
+    }
+
+    function sanitize_eai_settings($args) {
+        if (!isset($args['entgenai_ai_provider'])) { return array();}
+        $args['entgenai_ai_provider'] = sanitize_text_field($args['entgenai_ai_provider']);
+        $args['entgenai_ai_local_provider_url'] = sanitize_url($args['entgenai_ai_local_provider_url'], ['http', 'https']);
+        $args['entgenai_ai_local_provider_md'] = sanitize_text_field($args['entgenai_ai_local_provider_md']);
+        $args['entgenai_ai_provider_api_key'] = sanitize_text_field($args['entgenai_ai_provider_api_key']);
+        return $args;
     }
 
     // ---------------  Generation ----------------
@@ -368,10 +468,9 @@ class EntGenAiPluginSettings
         if (! current_user_can('manage_options')) {
             return;
         }
-        $wpnonce = wp_create_nonce( 'wp_rest' );
         // add error/update messages
-
-        if (isset($_GET['settings-updated'])) {
+        // not using the data in this $_GET, just checking if it is set
+        if (isset($_GET['settings-updated'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             // add settings saved message with the class of "updated"
             add_settings_error('entgenai_messages', 'entgenai_message', __('Settings Saved', 'entgenai'), 'updated');
         }
@@ -458,84 +557,12 @@ class EntGenAiPluginSettings
                     </div>
                 </div>
             </div>
-            <script>
-                
-                async function doFetch(uri, data) {
-                    let progressbar = jQuery( "#progressbar" );
-                    progressbar.show();
-                    progressbar.progressbar( "option", "value", false );
 
-                    let r = await fetch(
-                        wpApiSettings.root + uri,
-                        {
-                            method: 'POST',
-                            headers: {'X-WP-Nonce': '<?php echo esc_attr($wpnonce);?>',"Content-Type": "application/json"},
-                            body: JSON.stringify(data),
-                            //signal: AbortSignal.timeout(60000)  <-- this way didn't work
-                        }, 60000
-                    );
-                    if (!r.ok) {
-                        console.log('Error'+r.status);
-                        progressbar.hide();
-                        return null;
-                    }
-                    progressbar.hide();
-                    let jsonStr = await r.json();
-                    return JSON.parse(jsonStr);
-                }
-
-                async function genText() {
-                    let elm = document.getElementById('entgenaiuserprompt');
-                    if (elm === undefined || elm.value === '') {
-                        showFb('<?php echo esc_html__('Could not retrieve prompt data','entgenai');?>', 'error');
-                    }
-                    let sysElm = document.getElementById('entgenaisysprompt');
-                    let sysPrompt = sysElm.value ?? '';
-                    let data = {"topic" : elm.value, "sys": sysPrompt};
-                    let jsonResponse = await doFetch('entgenai/v1/gen/text', data);
-                    let gentxtElm = document.getElementById('entgenai_gen_txt');
-                    if (jsonResponse !== null && jsonResponse !== undefined) {
-                    gentxtElm.value = jsonResponse['content'] ?? '';
-                        let savgb = document.getElementById('savgenblock');
-                        savgb.style.setProperty('display', 'block');
-                    } else {
-                        showFb('<?php echo esc_html__('Did not receive any response','entgenai');?>', 'error');
-                    }
-                    return '';
-                }
-                let gtxtId = 0;
-                async function savegentxt() {
-                    let elm = document.getElementById('entgenai_gen_txt');
-                    if (elm === undefined || elm.value === '') {
-                        showFb('<?php echo esc_html__('Could not retrieve prompt data', 'entgenai');?>', 'error');
-                        return;
-                    }
-                    let gtxt = elm.value;
-                    let gentxttitle = document.getElementById('gentxttitle');
-                    if (gentxttitle === undefined || gentxttitle.value === '') {
-                        showFb('<?php echo esc_html__('Please enter a title for your content', 'entgenai');?>', 'error');
-                        return;
-                    }
-                    let data = {"gtxt" : gtxt, "title": gentxttitle.value, "gtid": gtxtId};
-                    let jsonResponse = await doFetch('entgenai/v1/save/gendata', data);
-                    // the fetch seems to be undefining the value in the textarea, so restoring it here.
-                    elm.value = gtxt;
-                    if (jsonResponse !== undefined && jsonResponse > 0) {
-                        showFb('<?php echo esc_html__('The content has been saved', 'entgenai');?>', 'success');
-                        gtxtId = jsonResponse;
-                        let gtedlnk = document.getElementById('gtedlnk');
-                        gtedlnk.innerHTML = '<a href="<?php echo esc_url(admin_url('post.php'));?>?post='+gtxtId+'&action=edit">Edit as Page</a>';
-                    } else {
-                        showFb('<?php echo esc_html__('The content could not be saved, something went wrong', 'entgenai');?>', 'error');
-                    }
-                }
-
-            </script>
         </div>
         <?php
     }
 
-    function ev_ai_about_page_html() {
+    function entgenai_about_page_html() {
         ?>
         <div class="wrap">
             <h1><?php printf( esc_html__("About EntGenAI", 'entgenai'));?></h1>
@@ -546,7 +573,7 @@ class EntGenAiPluginSettings
         <?php
     }
 
-    function ev_ai_faq_page_html() {
+    function entgenai_faq_page_html() {
         ?>
         <div class="wrap">
             <h1><?php printf( esc_html__("EntGenAI FAQ", 'entgenai'));?></h1>

@@ -45,6 +45,7 @@ class AIAPI
 
         $model = $entgenai_options['entgenai_ai_local_provider_md'];
         if ($apiKeyProvider === 'Gemini') {
+	        $apiProviderUrl = str_replace('gemini-1.5-flash', $model, $apiProviderUrl);
 	        $apiProviderUrl .= '?key='.$apiKey;
         }
         $args = AIAPI::prepareArgs($apiKeyProvider, $apiProviderUrl, $apiKey, $model, $prompt, $system);

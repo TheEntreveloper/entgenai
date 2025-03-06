@@ -48,19 +48,19 @@ class EntGenAiPluginLauncher {
                                               'models' => ['llama3.2', 'llama3.3']]];
         // for now, other providers can be added by coding here additional entries for $aiProviders as above
         // then in the admin console, deactivate and activate again the plugin.
-        add_option('known_ai_providers', $aiProviders);
+        add_option('entgenai_known_ai_providers', $aiProviders);
     }
 
     public function onDeactivate()
     {
-	    delete_option('known_ai_providers');
+	    delete_option('entgenai_known_ai_providers');
     }
 
     public function onInit()
     {
-        add_action('wp_enqueue_scripts', array($this, 'plgScripts'));
         add_action('wp_head', array($this, 'plgHead'));
-        load_plugin_textdomain('entgenai', false, plugin_basename(dirname(ENTGENAI_PLUGIN)) . '/backend/languages');
+        // apparently not required anymore
+        //load_plugin_textdomain('entgenai', false, plugin_basename(dirname(ENTGENAI_PLUGIN)) . '/backend/languages');
 	    add_action( 'admin_init', array( $this, 'privacyPolicy' ) );
         \ev\ai\controller\entgenaiRestController::init();
         add_action('admin_menu', array(self::$instance, 'adminMenu'));
@@ -118,12 +118,6 @@ class EntGenAiPluginLauncher {
         <a href="<?php echo esc_url(admin_url( 'admin.php?page=entgenai-faq'));?>">Plugin FAQ</a>.<br>
 		<?php
         return self::$instance;
-    }
-
-    public function plgScripts()
-    {
-        if (is_admin() || !is_singular('ev_ai')) return;
-
     }
 
     /**
