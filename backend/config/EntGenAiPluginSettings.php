@@ -24,7 +24,12 @@ class EntGenAiPluginSettings
          */
         add_action('admin_menu', array($this, 'entgenai_options_page'));
 	    add_action('admin_enqueue_scripts', array($this, 'enqueue_custom_settings_assets'));
-
+        /**
+         * use this hook to request a completion (text generation by AI) from another plugin, instead of via the user interface
+         * of this plugin. For instance, like this (all parameters are required):
+         * do_action('entgenai_generation_request', 'He was an old man who fished alone in a skiff', 'translate the following to German'); // here we pass the hook name, the user prompt, and the system prompt
+         */
+        add_action('entgenai_generation_request', array('ev\ai\service\AIAPI', 'completion'), 10, 2);
     }
 
     function entgenai_settings_init()
