@@ -4,7 +4,7 @@
  * Plugin Name: ENTGENAI
  * Plugin URI: https://entreveloper.com/
  * Description: Wordpress Plugin for anyone interested in doing GenAI right within their Wordpress website.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: The Entreveloper
  * Author URI: https://github.com/TheEntreveloper
  * License: GPLv2 or later

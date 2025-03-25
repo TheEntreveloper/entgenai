@@ -119,8 +119,9 @@ class EntGenAiPluginSettings
 		if ( isset( $page ) && 'entgenai-config' !== $page && 'entgenai-gen' !== $page) {
             return;
 		}
-		wp_register_script('entgenai-admin-util-js', ENTGENAI_PLUGIN_URL . 'frontend/admin/assets/adminutil.js', array('jquery-core', 'jquery-ui-dialog', 'jquery-ui-progressbar'), ENTGENAI_PLUGIN_VERSION, true);
+		wp_register_script('entgenai-admin-util-js', ENTGENAI_PLUGIN_URL . 'frontend/admin/assets/adminutil.js', array('jquery-core', 'jquery-ui-dialog', 'jquery-ui-progressbar', 'wp-i18n'), ENTGENAI_PLUGIN_VERSION, true);
 		wp_enqueue_script('entgenai-admin-util-js');
+        wp_set_script_translations('entgenai-admin-util-js', 'entgenai');
         if ($page === 'entgenai-config') {
             $this->inlineJs();
         } else {
@@ -128,6 +129,8 @@ class EntGenAiPluginSettings
         }
 		wp_register_style('entgenai-jqui-css', ENTGENAI_PLUGIN_URL . 'frontend/admin/assets/jquery-ui.css', false, '1.0.0');
 		wp_enqueue_style('entgenai-jqui-css');
+        wp_register_style('entgenai-styles-css', ENTGENAI_PLUGIN_URL . 'frontend/admin/assets/entgenai.css', false, '1.0.0');
+		wp_enqueue_style('entgenai-styles-css');
 	}
 
     /**
@@ -156,7 +159,10 @@ class EntGenAiPluginSettings
 
     function inlineJs() {
         $aiProviders = get_option('entgenai_known_ai_providers');
-        $jsData = "let models = {};
+        $provJson = json_encode($aiProviders);
+        $jsData = $this->getJsFetch().
+        "genai_prov_data = JSON.parse('".$provJson."');".
+        " let models = {};
             populateModels();
 
             let selAIProv = document.getElementById('entgenai_ai_provider');
@@ -197,12 +203,14 @@ class EntGenAiPluginSettings
                     toggleProviderEntries('show');
                 }
                 let aiProvUrl = document.getElementById(\"entgenai_ai_local_provider_url\");
+                let aiProvApiKey = document.getElementById(\"entgenai_ai_provider_api_key\");
                 switch(selected) {
                     ";
                     foreach ($aiProviders as $k => $v) {
                         $jsData .= "
                     case \"".$k."\":
                         aiProvUrl.value = \"".$v['url']."\";
+                        aiProvApiKey.value = genai_prov_data[selected]['apikey'];
                         showModels(\"".$k."\");
                         break;";
                     }
@@ -241,10 +249,7 @@ class EntGenAiPluginSettings
         $result = wp_add_inline_script('entgenai-admin-util-js', $jsData, 'before');
     }
 
-    /**
-    * Javascript functions for the genAI functionality
-    */
-    function genInlineJs() {
+    function getJsFetch() {
         $wpnonce = wp_create_nonce( 'wp_rest' );
         $jsData = '
                 async function doFetch(uri, data) {
@@ -270,6 +275,14 @@ class EntGenAiPluginSettings
                     let jsonStr = await r.json();
                     return JSON.parse(jsonStr);
                 }
+                ';
+        return $jsData;
+    }
+    /**
+    * Javascript functions for the genAI functionality
+    */
+    function genInlineJs() {
+        $jsData = $this->getJsFetch().' 
 
                 async function genText() {
                     let elm = document.getElementById("entgenaiuserprompt");
@@ -278,7 +291,9 @@ class EntGenAiPluginSettings
                     }
                     let sysElm = document.getElementById(\'entgenaisysprompt\');
                     let sysPrompt = sysElm.value ?? \'\';
-                    let data = {"topic" : elm.value, "sys": sysPrompt};
+                    let streamElm = document.getElementById(\'entgenai_stream\');
+                    let stream = streamElm.checked;
+                    let data = {"topic" : elm.value, "sys": sysPrompt, "stream": stream};
                     let jsonResponse = await doFetch(\'entgenai/v1/gen/text\', data);
                     let gentxtElm = document.getElementById(\'entgenai_gen_txt\');
                     if (jsonResponse !== null && jsonResponse !== undefined) {
@@ -320,6 +335,50 @@ class EntGenAiPluginSettings
         $result = wp_add_inline_script('entgenai-admin-util-js', $jsData, 'before');
     }
 
+    function providersDlg() {
+        ?>
+        <div id="entgenaiprovdiv" class="postbox">
+            <div class="postbox-header">
+                <h3><?php esc_html_e('Manage Providers', 'entgenai');?></h3>
+            </div>
+            <div id="entgenaifeedback" class="postbox">
+                <div class="postbox-header">
+                    &nbsp;
+                </div>
+                <div id="entgenaifbdata" style="text-align: center;padding-top: 5px;">
+
+                </div>
+            </div>
+            <div id="progressbar"></div>
+            <div id="entgenaiprovlist" style="overflow: scroll; height: 120px;"></div>
+            <div id="entgenaiprovdata" style="display: none;">
+                <div class="prov-container" role="presentation" border="1" style="border:1px;">
+                    <div class="provn"><input type="text" name="provider" title="AI Provider" placeholder="AI Provider" id="entgenai_pvname"></div>
+                    <div class="provu"><input type="text" name="provider_url" title="API URL" placeholder="API URL" id="entgenai_pvurl" class="r100p"></div>
+
+                    <div class="provk"><input type="text" name="provider_key" title="API Key" placeholder="API Key" id="entgenai_pvkey"></div>
+                    <div class="provm"><input type="text" name="provider_mdls" title="Model names, separated by comma" placeholder="Model names (ex.: m1, m2)" id="entgenai_pvmdls" class="r100p"></div>
+                </div>
+                <div class="prov-hb" id="entgenai_custom_subm" style="display: none;">
+                    <div  class="provht">
+                    By default, headers and body are sent OpenAI style. Below you can customize them<br>
+                    (key/value pairs, one per line):
+                    </div>
+                    <div class="provh">Headers</div>
+                    <div class="provhc">
+                        <textarea name="entgenai_hdr" id="entgenai_custom_hdr_subm" rows="5" cols="40"></textarea>
+                    </div>
+                    <div class="provb">Body</div>
+                    <div class="provbc">
+                        <textarea name="entgenai_body" id="entgenai_custom_body_subm" rows="5" cols="40"></textarea>
+                    </div>
+                </div>
+                <div colspan="2"><input type="button" class="button button-primary" title="Add/Update AI Service Provider" onclick="updProvider();" value="Update" /></div>
+            </div>
+        </div>
+        <?php
+    }
+
 	/**
      * AI Provider callback function.
      *
@@ -333,6 +392,7 @@ class EntGenAiPluginSettings
         if (isset($options[$args['label_for']])) {
             $this->selAiProvider = $options[$args['label_for']];
         }
+        $this->providersDlg();
         $this->printselect($args);?>
             <option value="Choose">Choose</option>
             <?php
@@ -343,6 +403,7 @@ class EntGenAiPluginSettings
             <?php
             } ?>
         </select>
+        <button type="button" class="button button-primary" title="Add/Remove AI Service Providers" onclick="manProviders(genai_prov_data);" >Manage</button>
     <?php
     }
 
@@ -384,7 +445,7 @@ class EntGenAiPluginSettings
                id="<?php echo esc_attr($args['label_for']); ?>" name="entgenai_config_options[<?php echo esc_attr($args['label_for']); ?>]"
                value="<?php echo esc_attr($options[$args['label_for']] ?? ''); ?>" title="API Key obtained directly from your AI Services Provider"
                 placeholder="Key from AI Service Provider">
-        <button type="button" onclick="toggleContent(<?php echo esc_attr($args['label_for']); ?>, this)" >View</button>
+        <button type="button" class="button button-primary" onclick="toggleContent(<?php echo esc_attr($args['label_for']); ?>, this)" >View</button>
 		<?php
 	}
 
@@ -555,6 +616,9 @@ class EntGenAiPluginSettings
                                 </div>
                             </div>
                             <div class="padded">
+                                <input type="checkbox" id="entgenai_stream"><?php esc_html_e('Stream', 'entgenai');?></input>
+                            </div>
+                            <div class="top_padded">
                                 <a class="button button-danger" onclick="genText()"><?php esc_html_e('AI Generate', 'entgenai');?></a>
                             </div>
 

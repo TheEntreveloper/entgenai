@@ -14,7 +14,7 @@ class AIAPI
     const AIAPIKEYPROVIDER = 'AIAPIKEYPROVIDER';
 
     // admin_action_
-    public static function completion($prompt, $system): WP_Error|string
+    public static function completion($prompt, $system, $stream): WP_Error|string
     {
         if (!current_user_can( 'manage_options' )) {
             return new WP_Error('access_denied', 'Access denied');
@@ -47,11 +47,18 @@ class AIAPI
         if ($apiKeyProvider === 'Gemini') {
 	        $apiProviderUrl = str_replace('gemini-1.5-flash', $model, $apiProviderUrl);
 	        $apiProviderUrl .= '?key='.$apiKey;
+			if ($stream) {
+				$apiProviderUrl = str_replace('generateContent', 'streamGenerateContent', $apiProviderUrl);
+			}
         }
-        $args = AIAPI::prepareArgs($apiKeyProvider, $apiProviderUrl, $apiKey, $model, $prompt, $system);
+        $args = AIAPI::prepareArgs($apiKeyProvider, $apiProviderUrl, $apiKey, $model, $prompt, $system, $stream);
+		if ($args instanceof WP_Error) {
+			return $args;
+		}
         $args['timeout'] = 1000;
         $apiResponse = wp_remote_post( $apiProviderUrl, $args);
         $content =  AIAPI::getAIAPIResponse($apiResponse, $apiKeyProvider);
+
 		if (!$content instanceof WP_Error) {
 			/*
 			 * let other know we received generated content, and participate in its processing. Let's inform:
@@ -83,58 +90,85 @@ class AIAPI
 	    return json_encode(['content' => $jsonResponse['message']['content']]);
     }
 
-    private static function prepareArgs($apiKeyProvider, $apiProviderUrl, $apiKey, $model, $prompt, $system)
-    {
+	public static function externalRequest($args) {
+
+	}
+
+    private static function prepareArgs($apiKeyProvider, $apiProviderUrl, $apiKey, $model, $prompt, $system, $stream): WP_Error|array {
         switch ($apiKeyProvider) {
             case 'OpenAI':
-                return AIAPI::getOpenAIArgs($apiKey, $model, $prompt, $system);
+                return AIAPI::getOpenAIArgs($apiKey, $model, $prompt, $system, $stream);
                 break;
             case 'Anthropic':
-                return AIAPI::getAnthropicArgs($apiKey, $model, $prompt, $system);
+                return AIAPI::getAnthropicArgs($apiKey, $model, $prompt, $system, $stream);
                 break;
             case 'Gemini':
 				return AIAPI::getGeminiArgs($prompt, $system);
                 break;
             case 'local_model':
-                return AIAPI::getLocalArgs($apiKey, $model, $prompt, $system);
+                return AIAPI::getLocalArgs($apiKey, $model, $prompt, $system, $stream);
         }
-        if ($apiProviderUrl === 'OpenAI') {
-        }
-        return array('headers' => array());
+        return AIAPI::getCustomAIArgs($apiKeyProvider, $apiKey, $model, $prompt, $system, $stream);
     }
 
-    private static function getOpenAIArgs($apiKey, $model, $prompt, $system)
-    {
-	    if (strlen($system) > 0) {
-		    $prompt = $system.' '.$prompt;
-	    }
+	private static function getCustomAIArgs($apiKeyProvider, $apiKey, $model, $prompt, $system, $stream): array|WP_Error {
+		$aiProviders = get_option("entgenai_known_ai_providers");
+		$custom_prov_options = $aiProviders[$apiKeyProvider];
+		if (!isset($custom_prov_options) || !is_array($custom_prov_options) || !isset($custom_prov_options['headers'])
+		    || !isset($custom_prov_options['body'])) {
+			return new WP_Error(__('Provider', 'entgenai').' '.$apiKeyProvider. ' '.__('not properly configured', 'entgenai'));
+		}
+		$headers = array(); $body = $custom_prov_options['body'];
+		foreach ($custom_prov_options['headers'] as $k=>$v) {
+			$headers[$k] = AIAPI::replaceTempl($v, $apiKey, $model, $prompt, $system, $stream);
+		}
+		return array(
+			'body'        => AIAPI::replaceTempl(json_encode($body), $apiKey, $model, $prompt, $system, $stream),
+			'headers'     => $headers,
+		);
+	}
+
+	private static function replaceTempl($v, $apiKey, $model, $prompt, $system = '', $stream = 'false') {
+		$v = str_replace('_APIKEY', $apiKey??'', $v);
+		$v = str_replace('_LLMODEL', $model??'', $v);
+		$v = str_replace('_PROMPT', $prompt, $v);
+		$v = str_replace('_SYSTEM', $system??'', $v);
+
+		return str_replace('_STREAM', $stream ?? 'false', $v);
+	}
+
+    private static function getOpenAIArgs($apiKey, $model, $prompt, $system, $stream): array {
         $headers = array(
             'content-type' => 'application/json',
             'Authorization' => 'Bearer ' . $apiKey,
         );
-        $body = json_encode(
-            array(
+		$messages = [];
+	    if ($system !== null && strlen($system) > 0) {
+		    $messages[] = array(
+			    'role' => 'developer',
+			    'content' => $system
+		    );
+	    }
+	    $messages[] = array(
+		    'role' => 'user',
+		    'content' => $prompt
+	    );
+	    $body = array(
                 'model' => $model ?? 'gpt-4o-mini', //'gpt-3.5-turbo',
-                'messages' => array(
-                    array(
-                        'role' => 'user',
-                        'content' => $prompt
-                    )
-                )
-            )
+                'messages' => $messages
         );
+
+	    if ($stream) {
+		    $body['stream'] = true;
+	    }
         return array(
-            'body'        => $body,
+            'body'        => json_encode($body),
             'headers'     => $headers,
         );
     }
 
-    // https://api.anthropic.com/v1/messages
-    private static function getAnthropicArgs($apiKey, $model, $prompt, $system)
+    private static function getAnthropicArgs($apiKey, $model, $prompt, $system, $stream)
     {
-	    if (strlen($system) > 0) {
-		    $prompt = $system.' '.$prompt;
-	    }
         $headers = array(
             'content-type' => 'application/json',
             'Authorization' => 'x-api-key ' . $apiKey,
@@ -149,6 +183,12 @@ class AIAPI
 					)
                 )
         );
+		if ($stream) {
+			$body['stream'] = true;
+		}
+	    if ($system !== null && strlen($system) > 0) {
+		    $body['system'] = $system;
+	    }
         return array(
             'body'        => json_encode($body),
             'headers'     => $headers,
@@ -183,7 +223,7 @@ class AIAPI
 		);
 	}
 
-    private static function getLocalArgs($apiKey, $model, $prompt, $system)
+    private static function getLocalArgs($apiKey, $model, $prompt, $system, $stream)
     {
         $headers = array(
             'content-type' => 'application/json',
@@ -201,7 +241,7 @@ class AIAPI
                         'content' => $prompt
                     )
                 ),
-                'stream' => false
+                'stream' => $stream
             )
         );
         return array(

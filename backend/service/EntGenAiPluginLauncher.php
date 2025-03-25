@@ -39,18 +39,35 @@ class EntGenAiPluginLauncher {
         // load default AI service providers, and their url, as key/value pairs, so leaving room to additional details
         // later on
         $aiProviders = [entgenai_openai => ['url' => entgenai_config_openai_url,
-                                        'models' => ['Ada', 'Curie', 'DALL-E', 'Davinci', 'GPT-3.5', 'GPT-4', 'GPT-4o', 'Whisper']],
+                                        'models' => ['Ada', 'Curie', 'DALL-E', 'Davinci', 'GPT-3.5', 'GPT-4', 'GPT-4o', 'Whisper'],
+                                        'apikey' => '',
+                                        'headers' => [],
+                                        'body' => []],
                         entgenai_anthropic => ['url' => entgenai_config_anthropicai_url,
-                                           'models' => ['claude-3-5-haiku-20241022', 'claude-3-opus-20240229', 'claude-3-5-sonnet-20241022']],
+                                           'models' => ['claude-3-5-haiku-20241022', 'claude-3-opus-20240229', 'claude-3-5-sonnet-20241022'],
+                                           'apikey' => '',
+                                           'headers' => [],
+                                           'body' => []],
                         entgenai_gemini => ['url' => entgenai_config_geminiai_url,
-                                        'models' => ['gemini-1.5-flash', 'gemini-2.0-flash']],
+                                        'models' => ['gemini-1.5-flash', 'gemini-2.0-flash'],
+                                        'apikey' => '',
+                                        'headers' => [],
+                                        'body' => []],
                         entgenai_local_ollama => ['url' => entgenai_config_localai_url,
-                                              'models' => ['llama3.2', 'llama3.3']]];
+                                              'models' => ['llama3.2', 'llama3.3'],
+                                              'apikey' => '',
+                                              'headers' => [],
+                                              'body' => []]];
         // for now, other providers can be added by coding here additional entries for $aiProviders as above
         // then in the admin console, deactivate and activate again the plugin.
         add_option('entgenai_known_ai_providers', $aiProviders);
     }
 
+	/**
+	 * on de-activation, we remove all AI Providers.
+     * if user re-activates the plugin, only the original default AI providers will exist. Any provider added or
+     * updated, afterwards, will be lost.
+	 */
     public function onDeactivate()
     {
 	    delete_option('entgenai_known_ai_providers');

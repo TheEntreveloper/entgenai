@@ -3,7 +3,7 @@ Contributors: entreveloper
 Tags: genai, ai, ai api, api
 Requires at least: 6.5
 Tested up to: 6.7
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,10 +14,11 @@ Get started with AI.
 This Plugin is for anyone interested in doing Generative AI (GenAI) right within their Wordpress website. It provides a way to connect to a 3rd party AI Provider, and submit requests, together with the user's API key for that particular provider.
 Code for this Plugin was originally created for our EV-Crosswords plugin, but extracted and modified to have a "life of its own", as generative AI is useful and trending, and the blend between the power of Wordpress as a CMS, and genAI can lead to many interesting applications, and potentially to quite a bit of innovation.
 This is an early stage of this Plugin, to have the basics in place: the ability to connect to an AI API and submit prompts and receive, store and use the response in your own pages.
-At the moment, it accepts text input and receives text responses, which are shown the user, with an option to save them as a Wordpress page in draft.
+At the moment, it accepts text input and receives text responses, which are shown to the user, with an option to save them, as a Wordpress page in draft.
 The user can then edit that page, modified if necessary, and publish it, all within a couple of minutes.
 Additionally, everytime a successful response is received, the plugin publishes a 'entgenai_completion_response' action, with arguments, which contains the name of the AI Provider, the prompt submitted and the text content of the response received.
-This is to set the basis for other plugins or themes to hook to that and use that information.
+Lastly, a hook has been added (entgenai_generation_request), which other plugins can use to submit a completion request (generative text request) to this plugin.
+Those two hooks, set the basis for other plugins or themes to hook into this plugin's functionality.
 This will be part of what we will refer to as EntGenAi for applications, which will allow in future versions to build complex AI driven workflows.
 Read carefully the FAQ section below, for additional information, and to understand how your data is used as part of the regular functionality of this Plugin.
 

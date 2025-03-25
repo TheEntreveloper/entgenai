@@ -1,0 +1,44 @@
+.top_padded {
+    padding-top: 5px;
+}
+.floated {
+    float: left;
+}
+.lhdr {
+    width: 80px;
+}
+.l30p {
+    width: 30%;
+}
+.r70p {
+    width: 70%;
+}
+.r100p {
+    width: 100%;
+}
+.provn { grid-area: fn; }
+.provu { grid-area: fu; }
+.provk { grid-area: fk; }
+.provm { grid-area: fm; }
+.provht { grid-area: ft; }
+.provh { grid-area: fh; }
+.provhc { grid-area: fhc; }
+.provb { grid-area: fb; }
+.provbc { grid-area: fbc; }
+.prov-container {
+    display: grid;
+    grid-template-areas:
+    'fn fu fu fu'
+    'fk fm fm fm';
+    grid-gap: 10px;
+    padding: 10px;
+}
+.prov-hb {
+    display: grid;
+    grid-template-areas:
+    'ft ft ft ft'
+    'fh fhc fhc fhc'
+    'fb fbc fbc fbc';
+    grid-gap: 10px;
+    padding: 10px;
+}

@@ -35,4 +35,16 @@ class EntGenAiPostRepository {
 		}
 		return json_encode($response);
 	}
+
+	public static function saveProvider($data) {
+		$aiProviders = get_option('entgenai_known_ai_providers');
+		$found = false;
+		$aiProviders[$data['prov']]['url'] = $data['url'];
+		$aiProviders[$data['prov']]['apikey'] = $data['apikey'];
+		$aiProviders[$data['prov']]['models'] = $data['mdls'];
+		$aiProviders[$data['prov']]['headers'] = $data['headers'];
+		$aiProviders[$data['prov']]['body'] = $data['body'];
+		$result = update_option('entgenai_known_ai_providers', $aiProviders);
+		return json_encode(['result' => $result, 'provs' => $aiProviders]);
+	}
 }

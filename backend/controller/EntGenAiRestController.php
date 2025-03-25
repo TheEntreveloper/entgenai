@@ -9,7 +9,8 @@ class EntGenAiRestController {
 			[ 'route' => '/gen/text', 'props' => [ 'POST', 'genText' ] ],
 			[ 'route' => '/gen/image', 'props' => [ 'POST', 'genImage' ] ],
 			[ 'route' => '/load/gendata', 'props' => [ 'POST', 'loadGenText' ] ],
-			[ 'route' => '/save/gendata', 'props' => [ 'POST', 'saveGenText' ] ]
+			[ 'route' => '/save/gendata', 'props' => [ 'POST', 'saveGenText' ] ],
+			[ 'route' => '/save/provider', 'props' => [ 'POST', 'saveProvider' ] ]
 		];
 
 		add_action( 'rest_api_init', function () use ( $routes ) {
@@ -47,8 +48,14 @@ class EntGenAiRestController {
 		return $result ?? 0;
 	}
 
+	public static function saveProvider( $request ): \WP_Error|int|string {
+		$result = \ev\ai\repository\EntGenAiPostRepository::saveProvider( $request );
+
+		return $result ?? 0;
+	}
+
 	public static function genText( $request ): \WP_Error|int|string {
-		$wlist = \ev\ai\service\AIAPI::completion( $request['topic'], $request['sys'] );
+		$wlist = \ev\ai\service\AIAPI::completion( $request['topic'], $request['sys'], $request['stream'] );
 
 		return $wlist ?? 0;
 	}
