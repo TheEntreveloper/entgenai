@@ -27,9 +27,12 @@ class EntGenAiPluginSettings
         /**
          * use this hook to request a completion (text generation by AI) from another plugin, instead of via the user interface
          * of this plugin. For instance, like this (all parameters are required):
-         * do_action('entgenai_generation_request', 'He was an old man who fished alone in a skiff', 'translate the following to German'); // here we pass the hook name, the user prompt, and the system prompt
+         * do_action('entgenai_generation_request', 'He was an old man who fished alone in a skiff', 'translate the following to German'
+         * , false, $result); // here we pass the hook name, the user prompt, the system prompt, set streaming to false,
+         * and pass a $result array to collect the generated content.
+         * Note that an user can also receive the generated content by subscribing/listening to the 'entgenai_completion_response' action in their code.
          */
-        add_action('entgenai_generation_request', array('ev\ai\service\AIAPI', 'completion'), 10, 2);
+        add_action('entgenai_generation_request', array('ev\ai\service\AIAPI', 'completion'), 10, 4);
     }
 
     function entgenai_settings_init()
@@ -145,7 +148,7 @@ class EntGenAiPluginSettings
             <div id="setting-entgenai_fb_message_cnt" style="float:left;padding-top:4px;padding-right:5px;">&nbsp;</div>
             <button type="button" class="button-secondary" onclick="hideFb();"><?php esc_html_e('Dismiss this notice', 'entgenai'); ?></button>
         </div>
-        <p id="<?php echo esc_attr($args['id']); ?>"><?php esc_html_e('Choose your AI configuration to generate with AI', 'entgenai'); ?></p>
+        <p id="<?php echo esc_attr($args['id']); ?>"><?php esc_html_e('Choose active AI configuration to generate with AI. Use "Manage" to manage AI Providers', 'entgenai'); ?></p>
     <?php
     }
 
@@ -297,7 +300,11 @@ class EntGenAiPluginSettings
                     let jsonResponse = await doFetch(\'entgenai/v1/gen/text\', data);
                     let gentxtElm = document.getElementById(\'entgenai_gen_txt\');
                     if (jsonResponse !== null && jsonResponse !== undefined) {
-                    gentxtElm.value = jsonResponse[\'content\'] ?? \'\';
+                        let genCnt = jsonResponse[\'content\'] ?? \'\';
+                        if (jsonResponse[\'images\']) {
+                            genCnt += jsonResponse[\'images\']["count"] + " " + jsonResponse[\'images\']["data"];
+                        }
+                        gentxtElm.value = genCnt;
                         let savgb = document.getElementById(\'savgenblock\');
                         savgb.style.setProperty(\'display\', \'block\');
                     } else {
@@ -360,9 +367,8 @@ class EntGenAiPluginSettings
                     <div class="provm"><input type="text" name="provider_mdls" title="Model names, separated by comma" placeholder="Model names (ex.: m1, m2)" id="entgenai_pvmdls" class="r100p"></div>
                 </div>
                 <div class="prov-hb" id="entgenai_custom_subm" style="display: none;">
-                    <div  class="provht">
-                    By default, headers and body are sent OpenAI style. Below you can customize them<br>
-                    (key/value pairs, one per line):
+                    <div  class="provht" id="provht">
+
                     </div>
                     <div class="provh">Headers</div>
                     <div class="provhc">

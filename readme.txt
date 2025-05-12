@@ -2,8 +2,8 @@
 Contributors: entreveloper
 Tags: genai, ai, ai api, api
 Requires at least: 6.5
-Tested up to: 6.7
-Stable tag: 1.0.1
+Tested up to: 6.8
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,9 +30,10 @@ Installation and use of this plugin is straightforward:
 2. Activate the plugin through the 'Plugins' menu in WordPress.
 3. Navigate to Dashboard, EntGenAi Settings.
 4. Configure your AI Provider.
-5. Generate texts (and images in the next version, if the chosen model supports it) using those APIs.
+5. Generate texts (and images by visually or programmatically configuring a provider that supports it) using those APIs.
 6. Store your generated work.
 7. Use your generated text in any of your Wordpress pages.
+Read more about installation and usage in this post: https://entreveloper.com/2025/05/06/getting-started-with-the-entgenai-wordpress-plugin/
 
 == Development ==
 

@@ -36,7 +36,7 @@ class EntGenAiPostRepository {
 		return json_encode($response);
 	}
 
-	public static function saveProvider($data) {
+	public static function saveProvider($data) { error_log('in saveProvider');
 		$aiProviders = get_option('entgenai_known_ai_providers');
 		$found = false;
 		$aiProviders[$data['prov']]['url'] = $data['url'];

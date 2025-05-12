@@ -48,12 +48,25 @@ function populateProvFields(prov, genai_sel_prov, mdls) {
     document.getElementById('entgenai_pvurl').value =  genai_sel_prov.url;
     document.getElementById('entgenai_pvkey').value =  genai_sel_prov.apikey;
     document.getElementById('entgenai_pvmdls').value =  models ?? '';
+    document.getElementById('entgenai_custom_hdr_subm').value = genai_sel_prov.headers;
+    document.getElementById('entgenai_custom_body_subm').value = genai_sel_prov.body;
 }
 function custSubmDisplay(value) {
     document.getElementById('entgenai_custom_subm').style.setProperty('display', value);
 }
-function customizeSubmission(genai_sel_prov) {
+function customizeSubmission(prov, genai_sel_prov) {
     custSubmDisplay('grid');
+    let intro = document.getElementById('provht');
+    if (prov === __('AddNew', 'entgenai')) {
+        intro.innerHTML = 'By default, headers and body are sent OpenAI style. Below you can customize them<br>\n' +
+            '                    (key/value pairs, one per line). ';
+    } else {
+        intro.innerHTML = 'Customize headers and body as needed. ';
+    }
+    intro.innerHTML += 'Words starting with __ represent variables that will be ' +
+        'replaced with provided values during generation.' +
+        '_PROMPT is the prompt, _LLMODEL is the model, _APIKEY is the API Key, ' +
+        '_SYSTEM is for the System level or assistant prompt, and _STREAM to set response streaming true or false.';
     let hdrs = document.getElementById('entgenai_custom_hdr_subm');
     if (genai_sel_prov !== null && genai_sel_prov['headers'] !== null) {
         if ((genai_sel_prov['headers']) instanceof(Object)) {
@@ -90,8 +103,8 @@ function showSelProvdata(prov) {
     if (prov === __('AddNew', 'entgenai')) {
         let elm = document.getElementById('entgenaiprovdata');
         elm.style.setProperty('display', 'block');
-        populateProvFields('', {'url':'','apikey':''}, []);
-        customizeSubmission(null);
+        populateProvFields('', {'url':'','apikey':'','headers':'','body':''}, []);
+        customizeSubmission(null,null);
         return;
     }
     custSubmDisplay('none');
@@ -100,9 +113,9 @@ function showSelProvdata(prov) {
         let elm = document.getElementById('entgenaiprovdata');
         elm.style.setProperty('display', 'block');
         populateProvFields(prov, genai_sel_prov, models[prov]??[]);
-        if (['OpenAI', 'Anthropic', 'Gemini', 'local_model'].indexOf(prov) === -1) {
-            customizeSubmission(genai_sel_prov);
-        }
+        //if (['OpenAI', 'Anthropic', 'Gemini', 'local_model'].indexOf(prov) === -1) {
+        customizeSubmission(prov, genai_sel_prov);
+        //}
     }
 }
 async function updProvider() {
@@ -129,7 +142,7 @@ async function updProvider() {
         let selAIProv = document.getElementById('entgenai_ai_provider');
         onSelectAIProvider(selAIProv.value);
     } else {
-        showFb(__('The content could not be saved, something went wrong', 'entgenai'), 'error');
+        showFb(__('The content could not be saved, or no update was needed', 'entgenai'), 'error');
     }
 }
 jQuery(document).ready(function ($) {

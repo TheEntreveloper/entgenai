@@ -5,6 +5,7 @@ namespace ev\ai\util;
 const entgenai_openai = 'OpenAI';
 const entgenai_anthropic = 'Anthropic';
 const entgenai_gemini = 'Gemini';
+const entgenai_gemini_images = 'Gemini_image';
 const entgenai_local_ollama = 'local_model';
 
 // --- AI API Providers URLs
@@ -13,7 +14,7 @@ const entgenai_config_openai_url = 'https://api.openai.com/v1/chat/completions';
 // --- Anthropic ---
 const entgenai_config_anthropicai_url = 'https://api.anthropic.com/v1/messages';
 // --- Gemini ---
-const entgenai_config_geminiai_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const entgenai_config_geminiai_url = 'https://generativelanguage.googleapis.com/v1beta/models/_LLMODEL:generateContent?key=_APIKEY';
 // --- Local ---
 const entgenai_config_localai_url = 'http://localhost:11434/api/chat'; // using ollama and model: llama3.2
 
